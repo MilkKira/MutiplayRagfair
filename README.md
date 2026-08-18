@@ -17,12 +17,14 @@ CrossRagfair 是面向 SPT 4.0.13 / .NET 9 的跨服跳蚤市场服务端插件�
 ## 构建和测试
 
 ```powershell
-$env:NUGET_PACKAGES = "$env:USERPROFILE\.nuget\packages"
-dotnet restore MutiplayRagfair.slnx --ignore-failed-sources
-dotnet build MutiplayRagfair.slnx -c Release --no-restore
-dotnet run --project tests/CrossRagfair.Tests/CrossRagfair.Tests.csproj -c Release --no-build
-./build-package.ps1
+.\build-server-plugin.bat
+.\build-windows-hub.bat
+.\build-linux-hub.bat
 ```
+
+三个脚本分别输出到 `Build/ServerPlugin`、`Build/WindowsHub` 和 `Build/LinuxHub`。Windows/Linux Hub 均为 self-contained 单文件发布包，会把 .NET 9 与 ASP.NET Core 运行库封装进可执行文件；`appsettings.json` 保持外置以便修改。默认目标分别为 `win-x64` 和 `linux-x64`。ARM64 可通过参数指定，例如 `build-windows-hub.bat win-arm64` 或 `build-linux-hub.bat linux-arm64`。
+
+首次构建某个目标架构时，.NET SDK 可能需要联网下载对应的运行时包。
 
 SPT 项目严格绑定工作区 `ref/` 对应的 4.0.13 API。发布包不会包含 `SPTarkov.*`、`SPT.Server.*` 或 `0Harmony.dll`。
 
@@ -51,11 +53,10 @@ LICENSE
 ## Linux Hub
 
 ```bash
-chmod +x ./build-hub-linux.sh
-./build-hub-linux.sh
-dotnet ./dist/hub-linux/CrossRagfair.Hub.dll
+chmod +x ./CrossRagfair.Hub
+./CrossRagfair.Hub
 ```
 
-推荐安装到 `/opt/crossragfair-hub`，数据目录设为 `/var/lib/crossragfair`，并使用 [systemd 服务文件](deploy/linux/crossragfair-hub.service) 与 [环境变量示例](deploy/linux/hub.env.example)。Hub 默认只监听本机 HTTP；公网部署必须通过 Nginx、Caddy 等提供 HTTPS 反向代理，不要直接暴露 HTTP 端口。
+推荐安装到 `/opt/crossragfair-hub`，数据目录设为 `/var/lib/crossragfair`。如使用 systemd，令 `ExecStart` 指向 `/opt/crossragfair-hub/CrossRagfair.Hub`。Hub 默认只监听本机 HTTP；公网部署必须通过 Nginx、Caddy 等提供 HTTPS 反向代理，不要直接暴露 HTTP 端口。
 
 完整范围与内部方案见 [需求文档](docs/requirements.md) 和 [设计文档](docs/design.md)。
