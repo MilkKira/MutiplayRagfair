@@ -1,0 +1,61 @@
+# CrossRagfair
+
+CrossRagfair 是面向 SPT 4.0.13 / .NET 9 的跨服跳蚤市场服务端插件，作者为 Mochix2Milk。
+
+当前实现包含：
+
+- A、B 玩家档案保持完全独立；本服报价由原生 SPT 显示，异服报价投影到本服原生报价池。
+- 支持 RUB、USD、EUR，不共享以物易物或多支付条件报价。
+- Hub 使用 HMAC-SHA256 鉴权、单写入命令队列、JSON 快照和带哈希链的 JSONL 日志；不依赖 SQLite 或数据库 DLL。
+- 原服必须保持在线租约并确认本地库存锁，Hub 才允许预占；原服离线时不能购买其报价。
+- 远程购买采用 `Reserved -> BuyerApplying -> BuyerSaved -> Committed` Saga。买家档案先持久化，再扣减 Hub 权威库存，卖家结算事件由原服幂等消费。
+- 共享报价支持撤回、续期协调和 Hub 权威到期。有效购买事务持续占用库存，撤回/续期会拒绝与在途购买冲突的操作。
+- Hub 可在 Linux x64/ARM64 上运行，只要求 ASP.NET Core Runtime 9。
+
+当前仍应视为联调版本：自动化测试覆盖协议、并发库存、崩溃恢复和 JSON 日志，但必须先在 SPT 测试档案上完成发布、购买、卖家邮件、撤回、续期和到期的端到端验收，再用于长期存档。
+
+## 构建和测试
+
+```powershell
+$env:NUGET_PACKAGES = "$env:USERPROFILE\.nuget\packages"
+dotnet restore MutiplayRagfair.slnx --ignore-failed-sources
+dotnet build MutiplayRagfair.slnx -c Release --no-restore
+dotnet run --project tests/CrossRagfair.Tests/CrossRagfair.Tests.csproj -c Release --no-build
+./build-package.ps1
+```
+
+SPT 项目严格绑定工作区 `ref/` 对应的 4.0.13 API。发布包不会包含 `SPTarkov.*`、`SPT.Server.*` 或 `0Harmony.dll`。
+
+## SPT 节点配置
+
+把以下文件放入 A、B 各自的 `user/mods/CrossRagfair/`：
+
+```text
+CrossRagfair.Spt.dll
+CrossRagfair.Core.dll
+CrossRagfair.Contracts.dll
+config.json
+LICENSE
+```
+
+两端应设置不同的 `serverId`、相同的非空 `compatibilityHash`，并通过 `CROSS_RAGFAIR_SECRET` 提供至少 32 字符的各节点密钥。Hub 的 `PeerSecrets` 必须为每个 `serverId` 配置对应密钥。
+
+配置开关：
+
+- `readOnly=true`：只接收投影，不向 Hub 发布本服报价。
+- `readOnly=false`：发布本服玩家报价。
+- `enablePurchases=true`：允许远程购买并启用原服库存确认与卖家结算。
+
+正式联调时 A、B 都应使用 `readOnly=false` 和 `enablePurchases=true`。Hub 或原服不可达时交易按 fail-closed 拒绝。
+
+## Linux Hub
+
+```bash
+chmod +x ./build-hub-linux.sh
+./build-hub-linux.sh
+dotnet ./dist/hub-linux/CrossRagfair.Hub.dll
+```
+
+推荐安装到 `/opt/crossragfair-hub`，数据目录设为 `/var/lib/crossragfair`，并使用 [systemd 服务文件](deploy/linux/crossragfair-hub.service) 与 [环境变量示例](deploy/linux/hub.env.example)。Hub 默认只监听本机 HTTP；公网部署必须通过 Nginx、Caddy 等提供 HTTPS 反向代理，不要直接暴露 HTTP 端口。
+
+完整范围与内部方案见 [需求文档](docs/requirements.md) 和 [设计文档](docs/design.md)。

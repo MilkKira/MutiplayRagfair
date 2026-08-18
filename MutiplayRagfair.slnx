@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/CrossRagfair.Contracts/CrossRagfair.Contracts.csproj" />
+  <Project Path="src/CrossRagfair.Core/CrossRagfair.Core.csproj" />
+  <Project Path="src/CrossRagfair.Hub/CrossRagfair.Hub.csproj" />
+  <Project Path="src/CrossRagfair.Spt/CrossRagfair.Spt.csproj" />
+  <Project Path="tests/CrossRagfair.Tests/CrossRagfair.Tests.csproj" />
+</Solution>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <AssemblyName>CrossRagfair.Spt</AssemblyName>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CrossRagfair.Contracts\CrossRagfair.Contracts.csproj" />
+    <ProjectReference Include="..\CrossRagfair.Core\CrossRagfair.Core.csproj" />
+    <PackageReference Include="SPTarkov.Server.Core" Version="4.0.13" ExcludeAssets="runtime" />
+    <PackageReference Include="SPTarkov.DI" Version="4.0.13" ExcludeAssets="runtime" />
+    <PackageReference Include="SemanticVersioning" Version="3.0.0" ExcludeAssets="runtime" />
+    <Reference Include="0Harmony" Private="false">
+      <HintPath>$(USERPROFILE)\.nuget\packages\lib.harmony\2.4.2\lib\net9.0\0Harmony.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
