@@ -3,6 +3,7 @@ setlocal EnableExtensions
 
 set "ROOT=%~dp0"
 set "PROJECT=%ROOT%src\CrossRagfair.Hub\CrossRagfair.Hub.csproj"
+set "CERTIFICATE_SOURCE=%ROOT%certs\certificate.pfx"
 set "BUILD_DIR=%ROOT%Build"
 set "OUTPUT_DIR=%BUILD_DIR%\WindowsHub"
 set "STAGING_DIR=%BUILD_DIR%\.WindowsHub.tmp"
@@ -18,6 +19,12 @@ if /i not "%RUNTIME_ID%"=="win-x64" if /i not "%RUNTIME_ID%"=="win-arm64" (
 where dotnet >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] dotnet was not found. Install the .NET 9 SDK and try again.
+    exit /b 1
+)
+
+if not exist "%CERTIFICATE_SOURCE%" (
+    echo [ERROR] Hub certificate was not found:
+    echo         %CERTIFICATE_SOURCE%
     exit /b 1
 )
 
@@ -44,6 +51,8 @@ dotnet publish "%PROJECT%" ^
 if errorlevel 1 goto :publish_failed
 
 copy /y "%ROOT%LICENSE" "%STAGING_DIR%\" >nul
+if errorlevel 1 goto :package_failed
+copy /y "%CERTIFICATE_SOURCE%" "%STAGING_DIR%\certificate.pfx" >nul
 if errorlevel 1 goto :package_failed
 
 if exist "%OUTPUT_DIR%" rmdir /s /q "%OUTPUT_DIR%"

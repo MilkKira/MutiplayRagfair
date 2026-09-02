@@ -26,6 +26,8 @@ CrossRagfair 是面向 SPT 4.0.13 / .NET 9 的跨服跳蚤市场服务端插件�
 
 首次构建某个目标架构时，.NET SDK 可能需要联网下载对应的运行时包。
 
+Hub 默认使用 `https://0.0.0.0:7443`，从运行目录加载无密码的 `certificate.pfx`，并仅启用 TLS 1.2/1.3。构建前将证书放在 `certs/certificate.pfx`；两个 Hub 构建脚本会自动复制证书到对应的 `Build` 输出目录。PFX 包含私钥且已被 Git 忽略，不应提交或分发给节点客户端。
+
 SPT 项目严格绑定工作区 `ref/` 对应的 4.0.13 API。发布包不会包含 `SPTarkov.*`、`SPT.Server.*` 或 `0Harmony.dll`。
 
 ## SPT 节点配置
@@ -57,6 +59,6 @@ chmod +x ./CrossRagfair.Hub
 ./CrossRagfair.Hub
 ```
 
-推荐安装到 `/opt/crossragfair-hub`，数据目录设为 `/var/lib/crossragfair`。如使用 systemd，令 `ExecStart` 指向 `/opt/crossragfair-hub/CrossRagfair.Hub`。Hub 默认只监听本机 HTTP；公网部署必须通过 Nginx、Caddy 等提供 HTTPS 反向代理，不要直接暴露 HTTP 端口。
+推荐安装到 `/opt/crossragfair-hub`，数据目录设为 `/var/lib/crossragfair`。如使用 systemd，令 `ExecStart` 指向 `/opt/crossragfair-hub/CrossRagfair.Hub`。公网部署时证书必须包含实际访问域名，并受到各节点信任；不要使用仅适用于 `localhost` 的开发证书。
 
 完整范围与内部方案见 [需求文档](docs/requirements.md) 和 [设计文档](docs/design.md)。

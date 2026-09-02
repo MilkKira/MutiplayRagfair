@@ -21,6 +21,9 @@ bld/
 [Bb]in/
 [Bb]uild/
 [Oo]bj/
+
+# Local TLS private-key bundles
+certs/*.pfx
 [Ll]og/
 [Ll]ogs/
 

@@ -1,8 +1,11 @@
 using CrossRagfair.Contracts;
 using CrossRagfair.Core;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +18,22 @@ public static class HubApplication
         var builder = WebApplication.CreateSlimBuilder(args);
         var options = suppliedOptions ?? builder.Configuration.GetSection("CrossRagfairHub").Get<HubOptions>() ?? new();
         options.Validate();
+        if (new Uri(options.ListenUrl).Scheme == Uri.UriSchemeHttps)
+        {
+            var certificatePath = options.ResolveCertificatePath();
+            if (!File.Exists(certificatePath))
+                throw new FileNotFoundException("The Hub HTTPS certificate was not found.", certificatePath);
+
+            builder.WebHost.UseKestrelHttpsConfiguration();
+            builder.WebHost.ConfigureKestrel(kestrel => kestrel.ConfigureHttpsDefaults(https =>
+            {
+                https.SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
+#pragma warning disable SYSLIB0057 // SPT 4.0.13 PFX requires the same legacy loading path used by SPT.Server.
+                https.ServerCertificate = new X509Certificate2(certificatePath);
+#pragma warning restore SYSLIB0057
+                https.ClientCertificateMode = ClientCertificateMode.NoCertificate;
+            }));
+        }
         builder.WebHost.UseUrls(options.ListenUrl);
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton(_ => new HubEngine(Path.GetFullPath(options.DataDirectory)));
