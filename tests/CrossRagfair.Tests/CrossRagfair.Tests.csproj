@@ -6,5 +6,6 @@
     <ProjectReference Include="..\..\src\CrossRagfair.Contracts\CrossRagfair.Contracts.csproj" />
     <ProjectReference Include="..\..\src\CrossRagfair.Core\CrossRagfair.Core.csproj" />
     <ProjectReference Include="..\..\src\CrossRagfair.Hub\CrossRagfair.Hub.csproj" />
+    <ProjectReference Include="..\..\src\CrossRagfair.Spt\CrossRagfair.Spt.csproj" />
   </ItemGroup>
 </Project>

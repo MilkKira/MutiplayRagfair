@@ -26,7 +26,7 @@ CrossRagfair 是面向 SPT 4.0.13 / .NET 9 的跨服跳蚤市场服务端插件�
 
 首次构建某个目标架构时，.NET SDK 可能需要联网下载对应的运行时包。
 
-Hub 默认使用 `https://0.0.0.0:7443`，从运行目录加载无密码的 `certificate.pfx`，并仅启用 TLS 1.2/1.3。构建前将证书放在 `certs/certificate.pfx`；两个 Hub 构建脚本会自动复制证书到对应的 `Build` 输出目录。PFX 包含私钥且已被 Git 忽略，不应提交或分发给节点客户端。
+Hub 默认使用 `https://0.0.0.0:7443`，从运行目录加载无密码的 `certificate.pfx`，并仅启用 TLS 1.2/1.3。构建前将证书放在 `certs/certificate.pfx`，并把其不含私钥的公钥证书导出为 `certs/certificate.cer`。Hub 构建脚本会复制 PFX，服务端插件构建脚本会复制 CER。PFX 包含私钥且已被 Git 忽略，不应提交或分发给节点客户端；CER 可以安全分发给节点。
 
 SPT 项目严格绑定工作区 `ref/` 对应的 4.0.13 API。发布包不会包含 `SPTarkov.*`、`SPT.Server.*` 或 `0Harmony.dll`。
 
@@ -39,10 +39,13 @@ CrossRagfair.Spt.dll
 CrossRagfair.Core.dll
 CrossRagfair.Contracts.dll
 config.json
+certificate.cer
 LICENSE
 ```
 
 两端应设置不同的 `serverId`、相同的非空 `compatibilityHash`，并在各自的 `config.json` 中通过 `sharedSecret` 配置至少 32 字符的节点密钥。Hub 的 `PeerSecrets` 必须为每个 `serverId` 配置对应密钥。请限制 `config.json` 的文件访问权限，不要提交真实密钥。
+
+插件默认从自身目录加载 `certificate.cer`（可通过 `hubCertificatePath` 指定其他路径），并固定其 SHA-256 指纹。精确匹配的 CER 作为该 Hub 的信任锚，因此无需操作系统信任其自签名证书；主机名不匹配、证书过期、CER 缺失或 Hub 更换证书都会使连接按 fail-closed 拒绝。
 
 配置开关：
 

@@ -3,6 +3,7 @@ setlocal EnableExtensions
 
 set "ROOT=%~dp0"
 set "PROJECT=%ROOT%src\CrossRagfair.Spt\CrossRagfair.Spt.csproj"
+set "CERTIFICATE_SOURCE=%ROOT%certs\certificate.cer"
 set "SOURCE_DIR=%ROOT%src\CrossRagfair.Spt\bin\Release\net9.0"
 set "BUILD_DIR=%ROOT%Build"
 set "OUTPUT_DIR=%BUILD_DIR%\ServerPlugin"
@@ -11,6 +12,12 @@ set "STAGING_DIR=%BUILD_DIR%\.ServerPlugin.tmp"
 where dotnet >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] dotnet was not found. Install the .NET 9 SDK and try again.
+    exit /b 1
+)
+
+if not exist "%CERTIFICATE_SOURCE%" (
+    echo [ERROR] Hub public certificate was not found:
+    echo         %CERTIFICATE_SOURCE%
     exit /b 1
 )
 
@@ -44,6 +51,8 @@ if errorlevel 1 goto :package_failed
 copy /y "%SOURCE_DIR%\CrossRagfair.Contracts.dll" "%STAGING_DIR%\" >nul
 if errorlevel 1 goto :package_failed
 copy /y "%ROOT%src\CrossRagfair.Spt\config.json" "%STAGING_DIR%\" >nul
+if errorlevel 1 goto :package_failed
+copy /y "%CERTIFICATE_SOURCE%" "%STAGING_DIR%\certificate.cer" >nul
 if errorlevel 1 goto :package_failed
 copy /y "%ROOT%LICENSE" "%STAGING_DIR%\" >nul
 if errorlevel 1 goto :package_failed

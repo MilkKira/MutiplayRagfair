@@ -4,6 +4,7 @@
   "enablePurchases": false,
   "serverId": "server-a",
   "hubUrl": "https://hub.example.invalid:7443",
+  "hubCertificatePath": "certificate.cer",
   "sharedSecret": "",
   "sptVersion": "4.0.13",
   "compatibilityHash": "set-the-same-value-on-both-servers",

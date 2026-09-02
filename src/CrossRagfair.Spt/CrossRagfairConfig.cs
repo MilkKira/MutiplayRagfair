@@ -10,6 +10,7 @@ public sealed class CrossRagfairConfig
     public bool EnablePurchases { get; set; }
     public string ServerId { get; set; } = "server-a";
     public string HubUrl { get; set; } = "https://hub.example.invalid:7443";
+    public string HubCertificatePath { get; set; } = "certificate.cer";
     public string SharedSecret { get; set; } = "";
     public string SptVersion { get; set; } = "4.0.13";
     public string CompatibilityHash { get; set; } = "";
@@ -35,6 +36,8 @@ public sealed class CrossRagfairConfig
     {
         if (!Uri.TryCreate(HubUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
             throw new InvalidDataException("hubUrl must be an absolute HTTPS URL.");
+        if (Enabled && string.IsNullOrWhiteSpace(HubCertificatePath))
+            throw new InvalidDataException("hubCertificatePath must identify the Hub public certificate.");
         if (string.IsNullOrWhiteSpace(ServerId) || ServerId.Length > 64)
             throw new InvalidDataException("serverId must contain 1-64 characters.");
         if (SptVersion != "4.0.13") throw new InvalidDataException("This build only supports SPT 4.0.13.");
@@ -49,4 +52,7 @@ public sealed class CrossRagfairConfig
     }
 
     public string ResolveNodeDataDirectory(string assemblyDirectory) => Path.GetFullPath(NodeDataDirectory, assemblyDirectory);
+
+    public string ResolveHubCertificatePath(string assemblyDirectory) =>
+        Path.GetFullPath(HubCertificatePath, assemblyDirectory);
 }

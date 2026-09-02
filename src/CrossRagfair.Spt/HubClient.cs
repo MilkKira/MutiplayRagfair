@@ -11,11 +11,19 @@ public sealed class HubClient : IDisposable
     private readonly HttpClient _http;
     private readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web);
 
-    public HubClient(CrossRagfairConfig config)
+    public HubClient(CrossRagfairConfig config, string certificatePath)
     {
         _config = config;
-        _http = new HttpClient { BaseAddress = new(config.HubUrl), Timeout = Timeout.InfiniteTimeSpan };
+        var certificatePin = new HubCertificatePin(certificatePath);
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = certificatePin.Validate
+        };
+        PinnedCertificateSha256 = certificatePin.Sha256;
+        _http = new HttpClient(handler) { BaseAddress = new(config.HubUrl), Timeout = Timeout.InfiniteTimeSpan };
     }
+
+    public string PinnedCertificateSha256 { get; }
 
     public Task<ApiResult<object>?> RegisterAsync(CancellationToken cancellationToken = default) => SendAsync<ApiResult<object>>(
         HttpMethod.Post, "/api/v1/peers/register", new PeerRegistration(Protocol.Version, _config.ServerId,

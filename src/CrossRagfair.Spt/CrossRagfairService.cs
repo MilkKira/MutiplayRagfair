@@ -69,9 +69,10 @@ public sealed class CrossRagfairService(
             logger.Info("CrossRagfair is disabled by config.json.", null!);
             return Task.CompletedTask;
         }
-        _hub = new HubClient(_config);
         var assemblyDirectory = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
             ?? throw new InvalidOperationException("Cannot locate CrossRagfair assembly directory.");
+        var certificatePath = _config.ResolveHubCertificatePath(assemblyDirectory);
+        _hub = new HubClient(_config, certificatePath);
         _nodeStore = new NodeStateStore(_config.ResolveNodeDataDirectory(assemblyDirectory));
         _purchaseCoordinator = new(_config, _hub, _nodeStore, saveServer, eventOutputHolder,
             httpResponseUtil, logger, IsRemoteOffer);
@@ -79,6 +80,7 @@ public sealed class CrossRagfairService(
         Instance = this;
         RegisterPatches();
         _ = Task.Run(() => _originCoordinator.RunCommandLoopAsync(_backgroundStop.Token));
+        logger.Info($"Pinned Hub TLS certificate SHA-256={_hub.PinnedCertificateSha256} from {certificatePath}.", null!);
         logger.Success($"CrossRagfair 0.1.0 loaded for SPT 4.0.13; serverId={_config.ServerId}; readOnly={_config.ReadOnly}.", null!);
         return Task.CompletedTask;
     }

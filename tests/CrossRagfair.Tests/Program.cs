@@ -1,11 +1,16 @@
+using System.Net.Security;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using CrossRagfair.Contracts;
 using CrossRagfair.Core;
 using CrossRagfair.Hub;
+using CrossRagfair.Spt;
 
 var tests = new (string Name, Func<Task> Run)[]
 {
     ("HMAC is deterministic and body-sensitive", HmacTest),
+    ("Hub certificate pin is exact and preserves TLS checks", CertificatePinTest),
     ("Hub options reject weak peer secrets", HubOptionsValidationTest),
     ("origin must be online", OfflineOriginTest),
     ("peer compatibility is a hard gate", PeerCompatibilityTest),
@@ -38,6 +43,36 @@ static Task HmacTest()
     var b = HmacAuthentication.Compute("secret", "POST", "/x?a=1", "1", "n", "{}"u8);
     var c = HmacAuthentication.Compute("secret", "POST", "/x?a=1", "1", "n", "[]"u8);
     Equal(a, b); True(a != c, "Signature must include body hash.");
+    return Task.CompletedTask;
+}
+
+static Task CertificatePinTest()
+{
+    var directory = NewDirectory();
+    var certificatePath = Path.Combine(directory, "certificate.cer");
+    var now = DateTimeOffset.UtcNow;
+    using var expectedKey = RSA.Create(2048);
+    var expectedRequest = new CertificateRequest("CN=localhost", expectedKey, HashAlgorithmName.SHA256,
+        RSASignaturePadding.Pkcs1);
+    using var expected = expectedRequest.CreateSelfSigned(now.AddDays(-1), now.AddDays(1));
+    File.WriteAllBytes(certificatePath, expected.Export(X509ContentType.Cert));
+
+    using var wrongKey = RSA.Create(2048);
+    var wrongRequest = new CertificateRequest("CN=localhost", wrongKey, HashAlgorithmName.SHA256,
+        RSASignaturePadding.Pkcs1);
+    using var wrong = wrongRequest.CreateSelfSigned(now.AddDays(-1), now.AddDays(1));
+    var pin = new HubCertificatePin(certificatePath);
+
+    True(pin.Validate(expected, SslPolicyErrors.RemoteCertificateChainErrors, now),
+        "The exact pinned self-signed certificate must be accepted.");
+    True(!pin.Validate(wrong, SslPolicyErrors.RemoteCertificateChainErrors, now),
+        "A different certificate must be rejected.");
+    True(!pin.Validate(expected, SslPolicyErrors.RemoteCertificateNameMismatch, now),
+        "A hostname mismatch must be rejected.");
+    True(!pin.Validate(expected, SslPolicyErrors.RemoteCertificateChainErrors, now.AddDays(2)),
+        "An expired pinned certificate must be rejected.");
+
+    Directory.Delete(directory, true);
     return Task.CompletedTask;
 }
 
