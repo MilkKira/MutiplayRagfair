@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace CrossRagfair.Hub;
 
@@ -18,6 +20,11 @@ public static class HubApplication
         var builder = WebApplication.CreateSlimBuilder(args);
         var options = suppliedOptions ?? builder.Configuration.GetSection("CrossRagfairHub").Get<HubOptions>() ?? new();
         options.Validate();
+        builder.Logging.ClearProviders();
+        builder.Logging.SetMinimumLevel(options.ResolveLogLevel());
+        builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+        builder.Logging.AddConsole(console => console.FormatterName = HubConsoleFormatter.FormatterName);
+        builder.Logging.AddConsoleFormatter<HubConsoleFormatter, ConsoleFormatterOptions>();
         if (new Uri(options.ListenUrl).Scheme == Uri.UriSchemeHttps)
         {
             var certificatePath = options.ResolveCertificatePath();
@@ -39,6 +46,7 @@ public static class HubApplication
         builder.Services.AddSingleton(_ => new HubEngine(Path.GetFullPath(options.DataDirectory)));
         builder.Services.AddSingleton<OriginCommandBroker>();
         var app = builder.Build();
+        app.UseMiddleware<HubRequestLoggingMiddleware>();
         app.UseMiddleware<HmacMiddleware>();
 
         app.MapPost("/api/v1/peers/register", async (PeerRegistration request, HubEngine hub, HttpContext context) =>

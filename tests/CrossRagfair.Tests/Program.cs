@@ -12,6 +12,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("HMAC is deterministic and body-sensitive", HmacTest),
     ("Hub certificate pin is exact and preserves TLS checks", CertificatePinTest),
     ("Hub options reject weak peer secrets", HubOptionsValidationTest),
+    ("Hub log level supports standard names and aliases", HubLogLevelTest),
     ("origin must be online", OfflineOriginTest),
     ("peer compatibility is a hard gate", PeerCompatibilityTest),
     ("concurrent reservations cannot oversell", ConcurrentReservationTest),
@@ -82,6 +83,20 @@ static Task HubOptionsValidationTest()
     var threw = false;
     try { options.Validate(); } catch (InvalidDataException) { threw = true; }
     True(threw, "Weak Hub peer secret must be rejected.");
+    return Task.CompletedTask;
+}
+
+static Task HubLogLevelTest()
+{
+    var options = new HubOptions { LogLevel = "INFO" };
+    options.Validate();
+    Equal(Microsoft.Extensions.Logging.LogLevel.Information, options.ResolveLogLevel());
+    options.LogLevel = "warn";
+    Equal(Microsoft.Extensions.Logging.LogLevel.Warning, options.ResolveLogLevel());
+    options.LogLevel = "not-a-level";
+    var threw = false;
+    try { options.Validate(); } catch (InvalidDataException) { threw = true; }
+    True(threw, "An unknown Hub log level must be rejected.");
     return Task.CompletedTask;
 }
 

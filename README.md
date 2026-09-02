@@ -28,6 +28,8 @@ CrossRagfair 是面向 SPT 4.0.13 / .NET 9 的跨服跳蚤市场服务端插件�
 
 Hub 默认使用 `https://0.0.0.0:7443`，从运行目录加载无密码的 `certificate.pfx`，并仅启用 TLS 1.2/1.3。构建前将证书放在 `certs/certificate.pfx`，并把其不含私钥的公钥证书导出为 `certs/certificate.cer`。Hub 构建脚本会复制 PFX，服务端插件构建脚本会复制 CER。PFX 包含私钥且已被 Git 忽略，不应提交或分发给节点客户端；CER 可以安全分发给节点。
 
+Hub 控制台日志默认等级为 `Information`，可通过 `appsettings.json` 中的 `CrossRagfairHub:LogLevel` 调整。支持 `Trace`、`Debug`、`Information`/`INFO`、`Warning`/`WARN`、`Error`、`Critical`/`FATAL` 和 `None`。每个请求会按 `时间 [线程] [等级] [客户端请求] 方法 路径 -> 状态码 (耗时)` 输出；只记录路径，不记录查询字符串、HMAC 签名或共享密钥。
+
 SPT 项目严格绑定工作区 `ref/` 对应的 4.0.13 API。发布包不会包含 `SPTarkov.*`、`SPT.Server.*` 或 `0Harmony.dll`。
 
 ## SPT 节点配置
