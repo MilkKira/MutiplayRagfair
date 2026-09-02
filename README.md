@@ -40,7 +40,7 @@ config.json
 LICENSE
 ```
 
-两端应设置不同的 `serverId`、相同的非空 `compatibilityHash`，并通过 `CROSS_RAGFAIR_SECRET` 提供至少 32 字符的各节点密钥。Hub 的 `PeerSecrets` 必须为每个 `serverId` 配置对应密钥。
+两端应设置不同的 `serverId`、相同的非空 `compatibilityHash`，并在各自的 `config.json` 中通过 `sharedSecret` 配置至少 32 字符的节点密钥。Hub 的 `PeerSecrets` 必须为每个 `serverId` 配置对应密钥。请限制 `config.json` 的文件访问权限，不要提交真实密钥。
 
 配置开关：
 

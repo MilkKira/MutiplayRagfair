@@ -10,15 +10,13 @@ public sealed class CrossRagfairConfig
     public bool EnablePurchases { get; set; }
     public string ServerId { get; set; } = "server-a";
     public string HubUrl { get; set; } = "https://hub.example.invalid:7443";
-    public string SharedSecretEnvironmentVariable { get; set; } = "CROSS_RAGFAIR_SECRET";
+    public string SharedSecret { get; set; } = "";
     public string SptVersion { get; set; } = "4.0.13";
     public string CompatibilityHash { get; set; } = "";
     public int SyncIntervalSeconds { get; set; } = 2;
     public int RequestTimeoutMilliseconds { get; set; } = 2000;
     public int OriginLeaseSeconds { get; set; } = 10;
     public string NodeDataDirectory { get; set; } = "data/node";
-
-    public string SharedSecret => Environment.GetEnvironmentVariable(SharedSecretEnvironmentVariable) ?? "";
 
     public static CrossRagfairConfig Load()
     {
@@ -42,8 +40,8 @@ public sealed class CrossRagfairConfig
         if (SptVersion != "4.0.13") throw new InvalidDataException("This build only supports SPT 4.0.13.");
         if (string.IsNullOrWhiteSpace(CompatibilityHash))
             throw new InvalidDataException("compatibilityHash must be configured identically on both servers.");
-        if (Enabled && SharedSecret.Length < 32)
-            throw new InvalidDataException($"Environment variable {SharedSecretEnvironmentVariable} must contain at least 32 characters.");
+        if (Enabled && (string.IsNullOrWhiteSpace(SharedSecret) || SharedSecret.Length < 32))
+            throw new InvalidDataException("sharedSecret in config.json must contain at least 32 characters.");
         if (string.IsNullOrWhiteSpace(NodeDataDirectory)) throw new InvalidDataException("nodeDataDirectory cannot be empty.");
         SyncIntervalSeconds = Math.Clamp(SyncIntervalSeconds, 1, 30);
         RequestTimeoutMilliseconds = Math.Clamp(RequestTimeoutMilliseconds, 500, 10000);
